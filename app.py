@@ -11,6 +11,7 @@ DB_USER = 'personas_db_ymek_user'
 DB_PASSWORD = 'jATPfz43jqHvke0XbsWHNqin4N24Lbpy'
 
 
+# 🔥 Conexión segura (NO rompe la app)
 def conectar_db():
     try:
         conn = psycopg2.connect(
@@ -21,30 +22,46 @@ def conectar_db():
             sslmode='require'
         )
         return conn
-    except psycopg2.Error as e:
-        print("Error al conectar a la base de datos:", e)
+    except Exception as e:
+        print("❌ Error al conectar:", e)
+        return None
 
 
-# Crear persona
+# ✅ Crear persona (protegido)
 def crear_persona(dni, nombre, apellido, direccion, telefono):
     conn = conectar_db()
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO personas (dni, nombre, apellido, direccion, telefono)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (dni, nombre, apellido, direccion, telefono))
-    conn.commit()
-    conn.close()
+    if conn is None:
+        return
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO personas (dni, nombre, apellido, direccion, telefono)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (dni, nombre, apellido, direccion, telefono))
+        conn.commit()
+    except Exception as e:
+        print("❌ Error al insertar:", e)
+    finally:
+        conn.close()
 
 
-# Obtener registros
+# ✅ Obtener registros (protegido)
 def obtener_registros():
     conn = conectar_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM personas ORDER BY apellido")
-    registros = cursor.fetchall()
-    conn.close()
-    return registros
+    if conn is None:
+        return []
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM personas ORDER BY apellido")
+        registros = cursor.fetchall()
+        return registros
+    except Exception as e:
+        print("❌ Error al consultar:", e)
+        return []
+    finally:
+        conn.close()
 
 
 # Página principal
@@ -74,17 +91,26 @@ def administrar():
     return render_template('administrar.html', registros=registros)
 
 
-# Eliminar registro (CORREGIDO)
+# ✅ Eliminar registro (protegido)
 @app.route('/eliminar/<int:id>')
 def eliminar_registro(id):
     conn = conectar_db()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM personas WHERE id = %s", (id,))
-    conn.commit()
-    conn.close()
+    if conn is None:
+        return redirect(url_for('administrar'))
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM personas WHERE id = %s", (id,))
+        conn.commit()
+    except Exception as e:
+        print("❌ Error al eliminar:", e)
+    finally:
+        conn.close()
+
     return redirect(url_for('administrar'))
 
 
+# 🚀 Configuración para Render
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
