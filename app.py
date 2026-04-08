@@ -17,7 +17,8 @@ def conectar_db():
             dbname=DB_NAME,
             user=DB_USER,
             password=DB_PASSWORD,
-            host=DB_HOST
+            host=DB_HOST,
+            sslmode='require'
         )
         return conn
     except psycopg2.Error as e:
@@ -86,4 +87,4 @@ def eliminar_registro(id):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port)
